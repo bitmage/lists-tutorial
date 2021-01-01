@@ -34,13 +34,15 @@ mod tests {
     }
 }
 
+type Link = Option<Box<Node>>;
+
 pub struct List {
-    head: Option<Box<Node>>,
+    head: Link,
 }
 
 struct Node {
     elem: i32,
-    next: List,
+    next: Link,
 }
 
 impl List {
@@ -51,17 +53,27 @@ impl List {
         let newhead = mem::replace(&mut self.head, None);
         let newnode = Box::new(Node{
             elem: elem,
-            next: List {head: newhead},
+            next: newhead,
         });
         self.head = Some(newnode);
     }
     pub fn pop(&mut self) -> Option<i32> {
         match mem::replace(&mut self.head, None) {
             None => None,
-            Some(node) => {
-                self.head = node.next.head;
+            Some(mut node) => {
+                self.head = mem::replace(&mut node.next, None);
                 Some(node.elem)
             }
+        }
+    }
+}
+
+impl Drop for List {
+    fn drop(&mut self) {
+        //while let Some(_) = self.pop() {}
+        let mut cur_link = mem::replace(&mut self.head, None);
+        while let Some(mut boxed_node) = cur_link {
+            cur_link = mem::replace(&mut boxed_node.next, None);
         }
     }
 }
